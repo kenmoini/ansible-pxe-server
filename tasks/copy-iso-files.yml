@@ -21,3 +21,19 @@
   loop_control:
     loop_var: boot_item
     label: "{{ boot_item }}"
+
+- name: Copy the Kernel and Initrd files to the distro tftpboot directory - EFI
+  when: '"EFI" in distro_item.boot_methods'
+  ansible.builtin.copy:
+    src: "{{ install_iso_mount_base_path }}/{{ distro_item.arch }}/{{ distro_item.group }}/ext/{{ iso_basename }}/{{ boot_item }}"
+    dest: "{{ tftp_server_base_path }}/EFI/{{ distro_item.arch }}/{{ distro_item.group }}/{{ distro_item.name }}/{{ boot_item | basename }}"
+    mode: 0644
+    owner: nobody
+    group: nobody
+    remote_src: true
+  loop:
+  - "{{ distro_item.efi_kernel }}"
+  - "{{ distro_item.efi_initrd }}"
+  loop_control:
+    loop_var: boot_item
+    label: "{{ boot_item }}"

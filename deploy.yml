@@ -90,8 +90,8 @@
     - name: rocky91x8664
       displayName: Rocky Linux 9.1
       group: rocky91
-      efi_kernel: vmlinuz
-      efi_initrd: initrd.img
+      efi_kernel: images/pxeboot/vmlinuz
+      efi_initrd: images/pxeboot/initrd.img
       arch: x86_64
       family: rhel
       isoURL: https://download.rockylinux.org/pub/rocky/9/isos/x86_64/Rocky-9.1-x86_64-dvd.iso
@@ -107,8 +107,8 @@
     - name: rocky91arm64
       displayName: Rocky Linux 9.1
       group: rocky91
-      efi_kernel: vmlinuz
-      efi_initrd: initrd.img
+      efi_kernel: images/pxeboot/vmlinuz
+      efi_initrd: images/pxeboot/initrd.img
       arch: aarch64
       family: rhel
       isoURL: https://download.rockylinux.org/pub/rocky/9/isos/aarch64/Rocky-9.1-aarch64-dvd.iso
@@ -125,8 +125,8 @@
       group: rhel86
       bios_kernel: images/pxeboot/vmlinuz
       bios_initrd: images/pxeboot/initrd.img
-      efi_kernel: casper/linux
-      efi_initrd: casper/initrd.gz
+      efi_kernel: images/pxeboot/vmlinuz
+      efi_initrd: images/pxeboot/initrd.img
       arch: x86_64
       family: rhel
       # Either isoURL or isoSrcPath need to be provided
@@ -143,8 +143,8 @@
     - name: rhel86arm64
       displayName: Red Hat Enterprise Linux 8.6
       group: rhel86
-      efi_kernel: casper/linux
-      efi_initrd: casper/initrd.gz
+      efi_kernel: images/pxeboot/vmlinuz
+      efi_initrd: images/pxeboot/initrd.img
       arch: aarch64
       family: rhel
       # Either isoURL or isoSrcPath need to be provided
@@ -162,6 +162,8 @@
       group: rhel87
       bios_kernel: images/pxeboot/vmlinuz
       bios_initrd: images/pxeboot/initrd.img
+      efi_kernel: images/pxeboot/vmlinuz
+      efi_initrd: images/pxeboot/initrd.img
       arch: x86_64
       family: rhel
       # Either isoURL or isoSrcPath need to be provided
@@ -178,8 +180,8 @@
     - name: rhel91x8664
       displayName: Red Hat Enterprise Linux 9.1
       group: rhel91
-      kernel: images/pxeboot/vmlinuz
-      initrd: images/pxeboot/initrd.img
+      efi_kernel: images/pxeboot/vmlinuz
+      efi_initrd: images/pxeboot/initrd.img
       arch: x86_64
       efi_loader_seed: true
       efi_loader_path: EFI/BOOT/ # trailing slash is important!
@@ -378,7 +380,6 @@
             ansible.builtin.fail:
               msg: "EFI boot method detected for aarch64, but no seeder was detected.  Please set the 'efi_loader_seed' variable to 'true' for the distro you wish to seed as the primary bootloader seed."
 
-
           - name: Seed the X86_64 Bootloader files
             when: efi_x86_64_seeder_name is defined and efi_x86_64_seeder_name != "" and efi_x86_64_seeder_name == distro_item.name and distro_item.arch == "x86_64"
             ansible.builtin.copy:
@@ -421,6 +422,14 @@
             template:
               src: templates/menu-x86_64-efi.j2
               dest: "{{ tftp_server_base_path }}/EFI/x86_64/grub.cfg"
+              owner: nobody
+              group: nobody
+              mode: 0755
+
+          - name: Template the EFI Boot Menu for aarch64
+            template:
+              src: templates/menu-aarch64-efi.j2
+              dest: "{{ tftp_server_base_path }}/EFI/aarch64/grub.cfg"
               owner: nobody
               group: nobody
               mode: 0755

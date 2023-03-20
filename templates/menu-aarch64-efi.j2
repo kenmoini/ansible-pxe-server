@@ -25,22 +25,45 @@ set timeout=60
 
 search --no-floppy --set=root -l 'RHEL-9-1-0-BaseOS-aarch64'
 
-### BEGIN /etc/grub.d/10_linux ###
-menuentry 'Install Red Hat Enterprise Linux 9.1' --class red --class gnu-linux --class gnu --class os {
-        linux /images/pxeboot/vmlinuz inst.stage2=hd:LABEL=RHEL-9-1-0-BaseOS-aarch64 ro
-        initrd /images/pxeboot/initrd.img
+submenu 'Install Linux, GUI Mode, AARCH64 -->' {
+{% for distro in distros %}
+{% if "EFI" in distro.boot_methods and distro.arch == "aarch64" and distro.efi_options is defined and "gui-install" in distro.efi_options %}
+{% if distro.isoURL is defined %}{% set isoFileName = distro.isoURL | basename %}{% endif %}
+{% if distro.isoSrcPath is defined %}{% set isoFileName = distro.isoSrcPath | basename %}{% endif %}
+  menuentry '{{ distro.displayName }} - {{ distro.protocol | upper }}' --class {{ distro.family }} --class {{ distro.name }} {
+    linux /EFI/{{ distro.arch }}/{{ distro.group }}/{{ distro.name }}/{{ distro.efi_kernel | basename }}{% if distro.family == "rhel" %} inst.stage2={{ distro.protocol | lower }}://{{ pxe_server_ip }}/{{ 'pub/' if (distro.protocol|lower) == "ftp" }}{{ install_iso_mount_sub_path }}/{{ distro.arch }}/{{ distro.group }}/ext/{{ isoFileName | replace('.iso','') }} inst.repo={{ distro.protocol | lower }}://{{ pxe_server_ip }}/{{ 'pub/' if (distro.protocol|lower) == "ftp" }}{{ install_iso_mount_sub_path }}/{{ distro.arch }}/{{ distro.group }}/ext/{{ isoFileName | replace('.iso','') }} quiet{% elif distro.family == "ubuntu" %} root=/dev/ram0 ramdisk_size=1500000 ip=dhcp url={{ distro.protocol | lower }}://{{ pxe_server_ip }}/{{ 'pub/' if (distro.protocol|lower) == "ftp" }}{{ install_iso_mount_sub_path }}/{{ distro.arch }}/{{ distro.group }}/iso/{{ isoFileName }}{% endif %}
+    
+    initrd /EFI/{{ distro.arch }}/{{ distro.group }}/{{ distro.name }}/{{ distro.efi_initrd | basename }}
+  }
+
+{% endif %}
+{% endfor %}
 }
-menuentry 'Test this media & install Red Hat Enterprise Linux 9.1' --class red --class gnu-linux --class gnu --class os {
-        linux /images/pxeboot/vmlinuz inst.stage2=hd:LABEL=RHEL-9-1-0-BaseOS-aarch64 rd.live.check
-        initrd /images/pxeboot/initrd.img
+
+submenu 'Install Linux, Text Mode, AARCH64 -->' {
+{% for distro in distros %}
+{% if "EFI" in distro.boot_methods and distro.arch == "aarch64" and distro.efi_options is defined and "text-install" in distro.efi_options %}
+{% if distro.isoURL is defined %}{% set isoFileName = distro.isoURL | basename %}{% endif %}
+{% if distro.isoSrcPath is defined %}{% set isoFileName = distro.isoSrcPath | basename %}{% endif %}
+  menuentry '{{ distro.displayName }} - {{ distro.protocol | upper }}' --class {{ distro.family }} --class {{ distro.name }} {
+    linux /EFI/{{ distro.arch }}/{{ distro.group }}/{{ distro.name }}/{{ distro.efi_kernel | basename }}{% if distro.family == "rhel" %} inst.stage2={{ distro.protocol | lower }}://{{ pxe_server_ip }}/{{ 'pub/' if (distro.protocol|lower) == "ftp" }}{{ install_iso_mount_sub_path }}/{{ distro.arch }}/{{ distro.group }}/ext/{{ isoFileName | replace('.iso','') }} inst.repo={{ distro.protocol | lower }}://{{ pxe_server_ip }}/{{ 'pub/' if (distro.protocol|lower) == "ftp" }}{{ install_iso_mount_sub_path }}/{{ distro.arch }}/{{ distro.group }}/ext/{{ isoFileName | replace('.iso','') }} inst.text quiet{% elif distro.family == "ubuntu" %} root=/dev/ram0 ramdisk_size=1500000 ip=dhcp url={{ distro.protocol | lower }}://{{ pxe_server_ip }}/{{ 'pub/' if (distro.protocol|lower) == "ftp" }}{{ install_iso_mount_sub_path }}/{{ distro.arch }}/{{ distro.group }}/iso/{{ isoFileName }}{% endif %}
+    
+    initrd /EFI/{{ distro.arch }}/{{ distro.group }}/{{ distro.name }}/{{ distro.efi_initrd | basename }}
+  }
+{% endif %}
+{% endfor %}
 }
-submenu 'Troubleshooting -->' {
-        menuentry 'Install Red Hat Enterprise Linux 9.1 in text mode' --class red --class gnu-linux --class gnu --class os {
-                linux /images/pxeboot/vmlinuz inst.stage2=hd:LABEL=RHEL-9-1-0-BaseOS-aarch64 inst.text
-                initrd /images/pxeboot/initrd.img
-        }
-        menuentry 'Rescue a Red Hat Enterprise Linux system' --class red --class gnu-linux --class gnu --class os {
-                linux /images/pxeboot/vmlinuz inst.stage2=hd:LABEL=RHEL-9-1-0-BaseOS-aarch64 inst.rescue
-                initrd /images/pxeboot/initrd.img
-        }
+
+submenu 'Rescue Linux, AARCH64 -->' {
+{% for distro in distros %}
+{% if "EFI" in distro.boot_methods and distro.arch == "aarch64" and distro.efi_options is defined and "linux-rescue" in distro.efi_options %}
+{% if distro.isoURL is defined %}{% set isoFileName = distro.isoURL | basename %}{% endif %}
+{% if distro.isoSrcPath is defined %}{% set isoFileName = distro.isoSrcPath | basename %}{% endif %}
+  menuentry '{{ distro.displayName }} - {{ distro.protocol | upper }}' --class {{ distro.family }} --class {{ distro.name }} {
+    linux /EFI/{{ distro.arch }}/{{ distro.group }}/{{ distro.name }}/{{ distro.efi_kernel | basename }}{% if distro.family == "rhel" %} inst.stage2={{ distro.protocol | lower }}://{{ pxe_server_ip }}/{{ 'pub/' if (distro.protocol|lower) == "ftp" }}{{ install_iso_mount_sub_path }}/{{ distro.arch }}/{{ distro.group }}/ext/{{ isoFileName | replace('.iso','') }} inst.repo={{ distro.protocol | lower }}://{{ pxe_server_ip }}/{{ 'pub/' if (distro.protocol|lower) == "ftp" }}{{ install_iso_mount_sub_path }}/{{ distro.arch }}/{{ distro.group }}/ext/{{ isoFileName | replace('.iso','') }} inst.rescue quiet{% elif distro.family == "ubuntu" %} root=/dev/ram0 ramdisk_size=1500000 ip=dhcp url={{ distro.protocol | lower }}://{{ pxe_server_ip }}/{{ 'pub/' if (distro.protocol|lower) == "ftp" }}{{ install_iso_mount_sub_path }}/{{ distro.arch }}/{{ distro.group }}/iso/{{ isoFileName }}{% endif %}
+    
+    initrd /EFI/{{ distro.arch }}/{{ distro.group }}/{{ distro.name }}/{{ distro.efi_initrd | basename }}
+  }
+{% endif %}
+{% endfor %}
 }
