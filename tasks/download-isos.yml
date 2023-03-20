@@ -1,0 +1,34 @@
+---
+
+- name: Check to see if the ISO exists before downloading
+  when: distro_item.isoSrcPath is defined
+  ansible.builtin.stat:
+    path: "{{ install_iso_mount_base_path }}/{{ distro_item.arch }}/{{ distro_item.group }}/iso/{{ distro_item.isoSrcPath | basename }}"
+  register: local_iso_check_stat
+
+- name: Check to see if the ISO exists before downloading
+  when: distro_item.isoURL is defined
+  ansible.builtin.stat:
+    path: "{{ install_iso_mount_base_path }}/{{ distro_item.arch }}/{{ distro_item.group }}/iso/{{ distro_item.isoURL | basename }}"
+  register: remote_iso_check_stat
+
+- name: Copy ISOs to target path if from another mounted local source (like with RHEL)
+  when: distro_item.isoSrcPath is defined and local_iso_check_stat.stat.exists == false
+  ansible.builtin.copy:
+    src: "{{ distro_item.isoSrcPath }}"
+    dest: "{{ install_iso_mount_base_path }}/{{ distro_item.arch }}/{{ distro_item.group }}/iso/{{ distro_item.isoSrcPath | basename }}"
+    mode: 0644
+    owner: nobody
+    group: nobody
+    remote_src: true
+
+- name: Download ISOs to target path if from a remote source
+  when: distro_item.isoURL is defined and remote_iso_check_stat.stat.exists == false
+  ansible.builtin.get_url:
+    url: "{{ distro_item.isoURL }}"
+    dest: "{{ install_iso_mount_base_path }}/{{ distro_item.arch }}/{{ distro_item.group }}/iso/{{ distro_item.isoURL | basename }}"
+    mode: 0644
+    owner: nobody
+    group: nobody
+    force: true
+

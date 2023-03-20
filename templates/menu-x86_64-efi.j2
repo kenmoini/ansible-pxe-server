@@ -1,0 +1,88 @@
+# /var/ftp/pub/pxe/tftpboot/EFI/x86/grub.cfg
+
+set default="1"
+
+function load_video {
+  insmod efi_gop
+  insmod efi_uga
+  insmod video_bochs
+  insmod video_cirrus
+  insmod all_video
+}
+
+load_video
+set gfxpayload=keep
+insmod gzio
+insmod part_gpt
+insmod ext2
+
+set timeout=60
+### END /etc/grub.d/00_header ###
+
+# search --no-floppy --set=root -l 'Rocky-9-1-x86_64-dvd'
+
+### BEGIN /etc/grub.d/10_linux ###
+
+submenu 'Install Linux, GUI Mode, x86_64 -->' {
+{% for distro in distros %}
+{% if "EFI" in distro.boot_methods and distro.arch == "x86_64" and "gui-install" in distro.efi_options %}
+{% if distro.isoURL is defined %}{% set isoFileName = distro.isoURL | basename %}{% endif %}
+{% if distro.isoSrcPath is defined %}{% set isoFileName = distro.isoSrcPath | basename %}{% endif %}
+label {{ distro.name }}
+  menu label {{ distro.displayName }} - {{ distro.protocol | upper }}
+  kernel {{ distro.group }}/{{ distro.name }}/{{ distro.bios_kernel | basename }}
+  initrd {{ distro.group }}/{{ distro.name }}/{{ distro.bios_initrd | basename }}
+{% if distro.family == "rhel" %}
+  append inst.stage2={{ distro.protocol | lower }}://{{ pxe_server_ip }}/{{ 'pub/' if (distro.protocol|lower) == "ftp" }}{{ install_iso_mount_sub_path }}/{{ distro.arch }}/{{ distro.group }}/ext/{{ isoFileName | replace('.iso','') }} inst.repo={{ distro.protocol | lower }}://{{ pxe_server_ip }}/{{ 'pub/' if (distro.protocol|lower) == "ftp" }}{{ install_iso_mount_sub_path }}/{{ distro.arch }}/{{ distro.group }}/ext/{{ isoFileName | replace('.iso','') }} quiet
+{% elif distro.family == "ubuntu" %}
+  append root=/dev/ram0 ramdisk_size=1500000 ip=dhcp url={{ distro.protocol | lower }}://{{ pxe_server_ip }}/{{ 'pub/' if (distro.protocol|lower) == "ftp" }}{{ install_iso_mount_sub_path }}/{{ distro.arch }}/{{ distro.group }}/iso/{{ isoFileName }}
+{% endif %}
+{% endif %}
+{% endfor %}
+
+  menuentry 'Install RHEL 8.6 - FTP' --class fedora --class gnu-linux --class gnu --class os {
+    linuxefi /EFI/x86/rhel8.6/boot/vmlinuz inst.stage2=ftp://192.168.42.16/pub/pxe/install/x86_64/rhel8/ext/rhel-8.6-x86_64-dvd inst.repo=ftp://192.168.42.16/pub/pxe/install/x86_64/rhel8/ext/rhel-8.6-x86_64-dvd quiet
+    initrdefi /EFI/x86/rhel8.6/boot/initrd.img
+  }
+  menuentry 'Install RHEL 8.7 - FTP' --class fedora --class gnu-linux --class gnu --class os {
+    linuxefi /EFI/x86/rhel8.7/boot/vmlinuz inst.stage2=ftp://192.168.42.16/pub/pxe/install/x86_64/rhel8/ext/rhel-8.7-x86_64-dvd inst.repo=http://192.168.42.16/pub/pxe/install/x86_64/rhel8/ext/rhel-8.7-x86_64-dvd quiet
+    initrdefi /EFI/x86/rhel8.7/boot/initrd.img
+  }
+
+  menuentry 'Install Rocky Linux 9.1 - HTTP' --class fedora --class gnu-linux --class gnu --class os {
+    linuxefi /EFI/x86/rocky9.1/boot/vmlinuz inst.stage2=http://192.168.42.16/pxe/install/x86_64/rocky9/ext/Rocky-9.1-x86_64-dvd inst.repo=http://192.168.42.16/pxe/install/x86_64/rocky9/ext/Rocky-9.1-x86_64-dvd quiet
+    initrdefi /EFI/x86/rocky9.1/boot/initrd.img
+  }
+}
+
+submenu 'Install Linux, Text Mode, x86_64 -->' {
+  menuentry 'Install RHEL 8.6 - FTP' --class fedora --class gnu-linux --class gnu --class os {
+    linuxefi /EFI/x86/rhel8.6/boot/vmlinuz inst.stage2=ftp://192.168.42.16/pub/pxe/install/x86_64/rhel8/ext/rhel-8.6-x86_64-dvd inst.repo=ftp://192.168.42.16/pub/pxe/install/x86_64/rhel8/ext/rhel-8.6-x86_64-dvd inst.text quiet
+    initrdefi /EFI/x86/rhel8.6/boot/initrd.img
+  }
+  menuentry 'Install RHEL 8.7 - FTP' --class fedora --class gnu-linux --class gnu --class os {
+    linuxefi /EFI/x86/rhel8.7/boot/vmlinuz inst.stage2=ftp://192.168.42.16/pub/pxe/install/x86_64/rhel8/ext/rhel-8.7-x86_64-dvd inst.text quiet
+    initrdefi /EFI/x86/rhel8.7/boot/initrd.img
+  }
+
+  menuentry 'Install Rocky Linux 9.1 - HTTP' --class fedora --class gnu-linux --class gnu --class os {
+    linuxefi /EFI/x86/rocky9.1/boot/vmlinuz inst.stage2=http://192.168.42.16/pxe/install/x86_64/rocky9/ext/Rocky-9.1-x86_64-dvd inst.repo=http://192.168.42.16/pxe/install/x86_64/rocky9/ext/Rocky-9.1-x86_64-dvd inst.text quiet
+    initrdefi /EFI/x86/rocky9.1/boot/initrd.img
+  }
+}
+
+submenu 'Rescue Linux, x86_64 -->' {
+  menuentry 'Rescue RHEL 8.6 - FTP' --class fedora --class gnu-linux --class gnu --class os {
+    linuxefi /EFI/x86/rhel8.6/boot/vmlinuz inst.stage2=ftp://192.168.42.16/pub/pxe/install/x86_64/rhel8/ext/rhel-8.6-x86_64-dvd inst.rescue quiet
+    initrdefi /EFI/x86/rhel8.6/boot/initrd.img
+  }
+  menuentry 'Rescue RHEL 8.7 - FTP' --class fedora --class gnu-linux --class gnu --class os {
+    linuxefi /EFI/x86/rhel8.7/boot/vmlinuz inst.stage2=ftp://192.168.42.16/pub/pxe/install/x86_64/rhel8/ext/rhel-8.7-x86_64-dvd inst.rescue quiet
+    initrdefi /EFI/x86/rhel8.7/boot/initrd.img
+  }
+
+  menuentry 'Install Rocky Linux 9.1 - HTTP' --class fedora --class gnu-linux --class gnu --class os {
+    linuxefi /EFI/x86/rocky9.1/boot/vmlinuz inst.stage2=http://192.168.42.16/pxe/install/x86_64/rocky9/ext/Rocky-9.1-x86_64-dvd inst.rescue quiet
+    initrdefi /EFI/x86/rocky9.1/boot/initrd.img
+  }
+}

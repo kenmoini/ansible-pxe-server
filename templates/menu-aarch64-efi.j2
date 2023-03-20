@@ -1,0 +1,46 @@
+set default="1"
+
+function load_video {
+  if [ x$feature_all_video_module = xy ]; then
+    insmod all_video
+  else
+    insmod efi_gop
+    insmod efi_uga
+    insmod ieee1275_fb
+    insmod vbe
+    insmod vga
+    insmod video_bochs
+    insmod video_cirrus
+  fi
+}
+
+load_video
+set gfxpayload=keep
+insmod gzio
+insmod part_gpt
+insmod ext2
+
+set timeout=60
+### END /etc/grub.d/00_header ###
+
+search --no-floppy --set=root -l 'RHEL-9-1-0-BaseOS-aarch64'
+
+### BEGIN /etc/grub.d/10_linux ###
+menuentry 'Install Red Hat Enterprise Linux 9.1' --class red --class gnu-linux --class gnu --class os {
+        linux /images/pxeboot/vmlinuz inst.stage2=hd:LABEL=RHEL-9-1-0-BaseOS-aarch64 ro
+        initrd /images/pxeboot/initrd.img
+}
+menuentry 'Test this media & install Red Hat Enterprise Linux 9.1' --class red --class gnu-linux --class gnu --class os {
+        linux /images/pxeboot/vmlinuz inst.stage2=hd:LABEL=RHEL-9-1-0-BaseOS-aarch64 rd.live.check
+        initrd /images/pxeboot/initrd.img
+}
+submenu 'Troubleshooting -->' {
+        menuentry 'Install Red Hat Enterprise Linux 9.1 in text mode' --class red --class gnu-linux --class gnu --class os {
+                linux /images/pxeboot/vmlinuz inst.stage2=hd:LABEL=RHEL-9-1-0-BaseOS-aarch64 inst.text
+                initrd /images/pxeboot/initrd.img
+        }
+        menuentry 'Rescue a Red Hat Enterprise Linux system' --class red --class gnu-linux --class gnu --class os {
+                linux /images/pxeboot/vmlinuz inst.stage2=hd:LABEL=RHEL-9-1-0-BaseOS-aarch64 inst.rescue
+                initrd /images/pxeboot/initrd.img
+        }
+}

@@ -1,0 +1,26 @@
+---
+- name: Get the iso_basename
+  ansible.builtin.include_tasks: shared-get-iso_basename.yml
+
+- name: Check to see if the mounting directory exists
+  ansible.builtin.stat:
+    path: "{{ install_iso_mount_base_path }}/{{ distro_item.arch }}/{{ distro_item.group }}/ext/{{ iso_basename }}"
+  register: iso_mount_dir_check
+
+- name: Create the mounting directory for the ISO if it doesn't exist
+  when: iso_mount_dir_check.stat.exists == false
+  ansible.builtin.file:
+    path: "{{ install_iso_mount_base_path }}/{{ distro_item.arch }}/{{ distro_item.group }}/ext/{{ iso_basename }}"
+    state: directory
+    mode: 0755
+    owner: nobody
+    group: nobody
+
+- name: Mount the ISO to the mounting directory
+  ansible.posix.mount:
+    path: "{{ install_iso_mount_base_path }}/{{ distro_item.arch }}/{{ distro_item.group }}/ext/{{ iso_basename }}"
+    src: "{{ install_iso_mount_base_path }}/{{ distro_item.arch }}/{{ distro_item.group }}/iso/{{ iso_basename }}.iso"
+    fstype: iso9660
+    opts: ro,loop
+    state: mounted
+    boot: true

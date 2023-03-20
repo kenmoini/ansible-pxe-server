@@ -1,0 +1,35 @@
+---
+- name: Install Packages - General
+  ansible.builtin.dnf:
+    name: "{{ general_base_packages }}"
+    state: latest
+  
+- name: Install Packages - TFTP
+  when: enable_tftp
+  ansible.builtin.dnf:
+    name: tftp-server
+    state: latest
+
+- name: Install Packages - FTP
+  when: enable_ftp
+  ansible.builtin.dnf:
+    name: vsftpd
+    state: latest
+
+- name: Install Packages - HTTP
+  when: enable_http
+  ansible.builtin.dnf:
+    name: httpd
+    state: latest
+
+- name: Install Packages - DHCP
+  when: enable_dhcpd
+  ansible.builtin.dnf:
+    name: dhcp-server
+    state: latest
+
+- name: Install Packages - NFS
+  when: enable_nfs
+  ansible.builtin.dnf:
+    name: nfs-utils
+    state: latest

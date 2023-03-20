@@ -1,0 +1,61 @@
+ServerAdmin admin@kemo.labs
+ServerName pxe.kemo.labs:80
+ServerRoot "/etc/httpd"
+Listen 80
+Include conf.modules.d/*.conf
+User apache
+Group apache
+
+ErrorLog "logs/error_log"
+LogLevel warn
+
+EnableSendfile on
+IncludeOptional conf.d/*.conf
+AddDefaultCharset UTF-8
+
+DocumentRoot "{{ httpd_document_root }}"
+
+<Directory />
+    AllowOverride none
+    Require all denied
+</Directory>
+
+<Directory "/var/ftp">
+    AllowOverride None
+    Require all granted
+</Directory>
+
+<Directory "{{ httpd_document_root }}">
+    Options Indexes FollowSymLinks
+    AllowOverride None
+    Require all granted
+</Directory>
+
+<IfModule dir_module>
+    DirectoryIndex index.html
+</IfModule>
+
+<Files ".ht*">
+    Require all denied
+</Files>
+
+<IfModule log_config_module>
+    LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined
+    LogFormat "%h %l %u %t \"%r\" %>s %b" common
+    <IfModule logio_module>
+      LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %I %O" combinedio
+    </IfModule>
+    CustomLog "logs/access_log" combined
+</IfModule>
+
+<IfModule mime_module>
+    TypesConfig /etc/mime.types
+    AddType application/x-compress .Z
+    AddType application/x-gzip .gz .tgz
+    AddType text/html .shtml
+    AddOutputFilter INCLUDES .shtml
+</IfModule>
+
+<IfModule mime_magic_module>
+    MIMEMagicFile conf/magic
+</IfModule>

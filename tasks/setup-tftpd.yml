@@ -1,0 +1,31 @@
+---
+- name: Template the TFTP Service Override Config File
+  ansible.builtin.template:
+    src: tftp.service.d-override.conf.j2
+    dest: /etc/systemd/system/tftp.service.d/override.conf
+    owner: root
+    group: root
+    mode: 0644
+    backup: true
+
+- name: Allow TFTP through the firewall
+  ansible.posix.firewalld:
+    service: tftp
+    permanent: yes
+    state: enabled
+
+- name: Enable the needed SELinux Boolean(s)
+  ansible.posix.seboolean:
+    name: "{{ seb_item }}"
+    state: yes
+    persistent: yes
+  loop:
+    - tftp_home_dir
+  loop_control:
+    loop_var: seb_item
+
+- name: Enable and Start TFTP
+  ansible.builtin.service:
+    name: tftp.service
+    state: started
+    enabled: yes

@@ -1,0 +1,12 @@
+---
+- name: Enable and Start Firewalld
+  ansible.builtin.service:
+    name: firewalld
+    state: started
+    enabled: yes
+
+- name: Enable and Start Cockpit
+  ansible.builtin.service:
+    name: cockpit.socket
+    state: started
+    enabled: yes

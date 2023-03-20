@@ -1,0 +1,38 @@
+---
+- name: Template the VSFTPd Configuration file
+  ansible.builtin.template:
+    src: vsftpd.conf.j2
+    dest: /etc/vsftpd/vsftpd.conf
+    owner: root
+    group: root
+    mode: 0644
+    backup: true
+  register: vsftpd_conf_templating
+
+- name: Allow FTP through the firewall
+  ansible.builtin.firewalld:
+    service: ftp
+    permanent: yes
+    state: enabled
+
+- name: Enable the needed SELinux Boolean(s)
+  ansible.posix.seboolean:
+    name: "{{ seb_item }}"
+    state: yes
+    persistent: yes
+  loop:
+    - ftpd_full_access
+  loop_control:
+    loop_var: seb_item
+
+- name: Enable and Start VSFTPd
+  ansible.builtin.service:
+    name: vsftpd
+    state: started
+    enabled: yes
+
+- name: Restart the VSFTPd service if the configuration file changed
+  when: vsftpd_conf_templating.changed
+  ansible.builtin.service:
+    name: vsftpd
+    state: restarted

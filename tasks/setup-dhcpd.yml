@@ -1,0 +1,32 @@
+---
+- name: Template the DHCP Configuration File
+  ansible.builtin.template:
+    src: dhcpd.conf.j2
+    dest: /etc/dhcp/dhcpd.conf
+    owner: root
+    group: root
+    mode: 0644
+    backup: true
+  register: dhcpd_conf_templating
+
+- name: Allow DHCP through the firewall
+  ansible.posix.firewalld:
+    service: "{{ fw_items }}"
+    permanent: yes
+    state: enabled
+  loop:
+    - dhcp
+  loop_control:
+    loop_var: fw_items
+
+- name: Enable and Start DHCPD
+  ansible.builtin.service:
+    name: dhcpd
+    state: started
+    enabled: yes
+
+- name: Restart the DHCPD service if the configuration file changed
+  when: dhcpd_conf_templating.changed
+  ansible.builtin.service:
+    name: dhcpd
+    state: restarted

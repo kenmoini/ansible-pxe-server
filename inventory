@@ -1,0 +1,7 @@
+all:
+  hosts:
+    pxe.kemo.labs:
+      ansible_host: 192.168.42.16
+      ansible_connection: ssh
+      ansible_ssh_user: kemo
+      ansible_ssh_private_key_file: ~/.ssh/MasterKemoKey

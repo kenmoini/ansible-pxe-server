@@ -1,0 +1,34 @@
+---
+- name: Get the iso_basename
+  ansible.builtin.include_tasks: shared-get-iso_basename.yml
+
+- name: Assertion Check
+  block:
+    - name: Check to see that there is an EFI-type distro
+      when: distro_item.boot_methods is defined and 'EFI' in distro_item.boot_methods
+      ansible.builtin.set_fact:
+        efi_detected: true
+
+    - name: Check to see that there is an EFI-type distro for x86_64
+      when: distro_item.boot_methods is defined and 'EFI' in distro_item.boot_methods and distro_item.arch == 'x86_64'
+      ansible.builtin.set_fact:
+        efi_x86_64_detected: true
+
+    - name: Check to see that there is an EFI-type distro for aarch64
+      when: distro_item.boot_methods is defined and 'EFI' in distro_item.boot_methods and distro_item.arch == 'aarch64'
+      ansible.builtin.set_fact:
+        efi_aarch64_detected: true
+
+    - name: Check to see that there is an EFI-type seeder for x86_64
+      when: distro_item.boot_methods is defined and 'EFI' in distro_item.boot_methods and distro_item.arch == 'x86_64' and distro_item.efi_loader_seed is defined and distro_item.efi_loader_seed == true
+      ansible.builtin.set_fact:
+        efi_x86_64_seeder_detected: true
+        efi_x86_64_seeder_name: "{{ distro_item.name }}"
+        efi_x86_64_seeder_path: "{{ install_iso_mount_base_path }}/{{ distro_item.arch }}/{{ distro_item.group }}/ext/{{ iso_basename }}"
+
+    - name: Check to see that there is an EFI-type seeder for aarch64
+      when: distro_item.boot_methods is defined and 'EFI' in distro_item.boot_methods and distro_item.arch == 'aarch64' and distro_item.efi_loader_seed is defined and distro_item.efi_loader_seed == true
+      ansible.builtin.set_fact:
+        efi_aarch64_seeder_detected: true
+        efi_aarch64_seeder_name: "{{ distro_item.name }}"
+        efi_aarch64_seeder_path: "{{ install_iso_mount_base_path }}/{{ distro_item.arch }}/{{ distro_item.group }}/ext/{{ iso_basename }}"

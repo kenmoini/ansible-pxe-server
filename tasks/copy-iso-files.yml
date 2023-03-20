@@ -1,0 +1,23 @@
+---
+# This set of tasks will copy the needed kernel and initial ramdisk files to the
+# tftpboot directory for the distro.  This is done in the context of an individual
+# distro, which allows us to loop through sub-key lists here, like boot_method
+#
+- name: Get the iso_basename
+  ansible.builtin.include_tasks: shared-get-iso_basename.yml
+
+- name: Copy the Kernel and Initrd files to the distro tftpboot directory - BIOS
+  when: '"BIOS" in distro_item.boot_methods'
+  ansible.builtin.copy:
+    src: "{{ install_iso_mount_base_path }}/{{ distro_item.arch }}/{{ distro_item.group }}/ext/{{ iso_basename }}/{{ boot_item }}"
+    dest: "{{ tftp_server_base_path }}/BIOS/{{ distro_item.arch }}/{{ distro_item.group }}/{{ distro_item.name }}/{{ boot_item | basename }}"
+    mode: 0644
+    owner: nobody
+    group: nobody
+    remote_src: true
+  loop:
+  - "{{ distro_item.bios_kernel }}"
+  - "{{ distro_item.bios_initrd }}"
+  loop_control:
+    loop_var: boot_item
+    label: "{{ boot_item }}"

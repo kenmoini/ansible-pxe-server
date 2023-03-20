@@ -1,0 +1,57 @@
+---
+# This is run in the context of an individual distro, which allows us to loop through sub-key lists here, like boot_method
+
+# Install Paths: /var/ftp/pub/pxe/install/{{ arch }}/{{ group }}/{ext,iso}/{{ isoURL | basename }}
+# Kernel Boot Path: /var/ftp/pub/pxe/tftpboot/{{ boot_method }}/{{ arch }}/{{ group }}/{{ name }}/boot
+
+- name: Create the needed install mount paths for the distro
+  ansible.builtin.file:
+    path: "{{ path_item }}"
+    state: directory
+    mode: 0755
+    owner: nobody
+    group: nobody
+  loop:
+  - "{{ install_iso_mount_base_path }}/{{ distro_item.arch }}"
+  - "{{ install_iso_mount_base_path }}/{{ distro_item.arch }}/{{ distro_item.group }}"
+  - "{{ install_iso_mount_base_path }}/{{ distro_item.arch }}/{{ distro_item.group }}/ext"
+  - "{{ install_iso_mount_base_path }}/{{ distro_item.arch }}/{{ distro_item.group }}/iso"
+  loop_control:
+    loop_var: path_item
+
+- name: Create the needed kernel boot paths for the distro - Group
+  ansible.builtin.file:
+    path: "{{ tftp_server_base_path }}/{{ boot_method }}/{{ distro_item.arch }}/{{ distro_item.group }}"
+    state: directory
+    mode: 0755
+    owner: nobody
+    group: nobody
+  loop: "{{ distro_item.boot_methods }}"
+  loop_control:
+    loop_var: boot_method
+    label: "{{ tftp_server_base_path }}/{{ boot_method }}/{{ distro_item.arch }}/{{ distro_item.group }}"
+
+- name: Create the needed kernel boot paths for the distro - Name
+  ansible.builtin.file:
+    path: "{{ tftp_server_base_path }}/{{ boot_method }}/{{ distro_item.arch }}/{{ distro_item.group }}/{{ distro_item.name }}"
+    state: directory
+    mode: 0755
+    owner: nobody
+    group: nobody
+  loop: "{{ distro_item.boot_methods }}"
+  loop_control:
+    loop_var: boot_method
+    label: "{{ tftp_server_base_path }}/{{ boot_method }}/{{ distro_item.arch }}/{{ distro_item.group }}/{{ distro_item.name }}"
+
+# - name: Create the needed kernel boot paths for the distro - Boot
+#   ansible.builtin.file:
+#     path: "{{ tftp_server_base_path }}/{{ boot_method }}/{{ distro_item.arch }}/{{ distro_item.group }}/{{ distro_item.name }}/boot"
+#     state: directory
+#     mode: 0755
+#     owner: nobody
+#     group: nobody
+#   loop: "{{ distro_item.boot_methods }}"
+#   loop_control:
+#     loop_var: boot_method
+#     label: "{{ tftp_server_base_path }}/{{ boot_method }}/{{ distro_item.arch }}/{{ distro_item.group }}/{{ distro_item.name }}/boot"
+# 

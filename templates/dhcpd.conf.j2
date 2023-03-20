@@ -1,0 +1,23 @@
+default-lease-time {{ default_lease_time }};
+max-lease-time {{ max_lease_time }};
+option domain-name "{{ domain_name }}";
+option domain-name-servers {{ domain_name_servers }};
+option routers {{ gateway_router_ip }};
+option ntp-servers {{ ntp_server_ip }};
+option arch code 93 = unsigned integer 16; # RFC4578
+ddns-update-style none;
+
+subnet {{ dhcp_subnet }} netmask {{ dhcp_netmask }} {
+  range {{ dhcp_range_start }} {{ dhcp_range_end }};
+  default-lease-time {{ default_lease_time }};
+  max-lease-time {{ max_lease_time }};
+  next-server {{ pxe_server_ip }};
+
+  if option arch = 00:07 or option arch = 00:09 {
+    filename "/EFI/x86_64/BOOTX64.EFI";
+  } else if option arch = 00:0b {
+    filename "/EFI/aarch64/BOOTAA64.EFI";
+  } else {
+    filename "/BIOS/x86_64/pxelinux.0";
+  }
+}

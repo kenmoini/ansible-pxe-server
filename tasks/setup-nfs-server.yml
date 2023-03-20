@@ -1,0 +1,48 @@
+---
+- name: Template the NFS Exports File
+  ansible.builtin.template:
+    src: nfs-exports.j2
+    dest: /etc/exports
+    owner: root
+    group: root
+    mode: 0644
+    backup: true
+  register: nfs_exports_templating
+
+- name: Allow NFS through the firewall
+  ansible.posix.firewalld:
+    service: "{{ fw_items }}"
+    permanent: yes
+    state: enabled
+  loop:
+    - nfs
+    - nfs3
+    - mountd
+    - rpc-bind
+  loop_control:
+    loop_var: fw_items
+
+- name: Enable the needed SELinux Boolean(s)
+  ansible.posix.seboolean:
+    name: "{{ seb_item }}"
+    state: yes
+    persistent: yes
+  loop:
+    - nfs_export_all_rw
+  loop_control:
+    loop_var: seb_item
+
+- name: Enable the NFS Services
+  ansible.builtin.service:
+    name: "{{ svc_items }}"
+    state: started
+    enabled: yes
+  loop:
+    - nfs-server
+    - rpcbind
+  loop_control:
+    loop_var: svc_items
+
+- name: Export the NFS Shares
+  when: nfs_exports_templating.changed
+  command: exportfs -rav

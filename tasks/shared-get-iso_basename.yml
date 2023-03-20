@@ -1,0 +1,10 @@
+---
+- name: Get the file name for the ISO - ISO URL
+  when: distro_item.isoURL is defined
+  ansible.builtin.set_fact:
+    iso_basename: "{{ distro_item.isoURL | basename | replace('.iso','') }}"
+
+- name: Get the file name for the ISO - ISO Src Path
+  when: distro_item.isoSrcPath is defined
+  ansible.builtin.set_fact:
+    iso_basename: "{{ distro_item.isoSrcPath | basename | replace('.iso','') }}"

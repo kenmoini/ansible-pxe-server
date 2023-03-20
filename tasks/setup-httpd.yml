@@ -1,0 +1,28 @@
+---
+- name: Template the HTTPD Configuration file
+  ansible.builtin.template:
+    src: httpd.conf.j2
+    dest: /etc/httpd/conf/httpd.conf
+    owner: root
+    group: root
+    mode: 0644
+    backup: true
+  register: httpd_conf_templating
+
+- name: Allow HTTP through the firewall
+  ansible.posix.firewalld:
+    service: http
+    permanent: yes
+    state: enabled
+
+- name: Enable and Start HTTPD
+  ansible.builtin.service:
+    name: httpd
+    state: started
+    enabled: yes
+
+- name: Restart the HTTPD service if the configuration file changed
+  when: httpd_conf_templating.changed
+  ansible.builtin.service:
+    name: httpd
+    state: restarted

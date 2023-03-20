@@ -1,0 +1,477 @@
+---
+- name: Configure a RHEL host as a robust PXE host
+  hosts: all
+  become: true
+
+  vars:
+    # Basics, don't really turn these off
+    enable_tftp: true
+    enable_ftp: true
+    enable_http: true
+    enable_dhcpd: true
+    enable_nfs: true
+
+    # [Optional] If you want to use https, you need to generate a cert
+    enable_https: false
+
+    # Configure these
+    pxe_server_name: pxe.kemo.labs
+    pxe_server_ip: 192.168.42.16
+
+    vsftpd_banner_message: Welcome to Kemo Labs FTP service.
+    pxe_menu_x86_bios_title: Kemo Labs PXE Boot x86_64 BIOS
+
+    domain_name: kemo.labs
+    domain_name_servers: "192.168.42.9, 192.168.42.10"
+    gateway_router_ip: 192.168.42.1
+    ntp_server_ip: 192.168.42.48
+    dhcp_subnet: 192.168.42.0
+    dhcp_netmask: 255.255.255.0
+    dhcp_range_start: 192.168.42.100
+    dhcp_range_end: 192.168.42.250
+
+    distros:
+    # Pathing: /var/ftp/pub/pxe/install/{{ arch }}/{{ group }}/{ext,iso}/{{ isoURL | basename }}
+    # Pathing: /var/ftp/pub/pxe/tftpboot/{{ boot_method }}/{{ arch }}/( boot loader files )
+    # Pathing: /var/ftp/pub/pxe/tftpboot/{{ boot_method }}/{{ arch }}/{{ group }}/{{ name }}/boot
+
+
+    # Ubuntu Server 20.04 - x86_64
+    - name: ubuntu2004serverx8664 # Each name has to be unique
+      displayName: Ubuntu 20.04 LTS Server # Base display name presented in the menu
+      group: ubuntu20.04 # Grouping of distros, used for parent/child grouping structure
+      bios_kernel: casper/vmlinuz # where on the mounted ISO file is the kernel located
+      bios_initrd: casper/initrd # where on the mounted ISO file is the initrd located
+      efi_kernel: casper/vmlinuz
+      efi_initrd: casper/initrd
+      arch: x86_64 # architecture of the distro
+      family: ubuntu # family of the distro, used for logic switching between boot requirements, options are ubuntu and rhel
+      isoURL: https://releases.ubuntu.com/20.04.5/ubuntu-20.04.5-live-server-amd64.iso # URL to the ISO file
+      # Either isoURL or isoSrcPath need to be provided
+      # isoSrcPath: /mnt/nfs-isos/ubuntu-20.04.3-live-server-amd64.iso
+      protocol: http # protocol to use to boot the second stage installation, and to present as an installation source
+      boot_methods: # boot methods to support with this distro, BIOS and EFI are supported on x86_64, only EFI is supported on ARM64
+        - BIOS
+        - EFI
+      efi_options:
+        - gui-install
+
+    # Ubuntu Server 22.04 - x86_64
+    - name: ubuntu2204serverx8664
+      displayName: Ubuntu 22.04 LTS Server
+      group: ubuntu22.04
+      efi_kernel: casper/vmlinuz
+      efi_initrd: casper/initrd
+      arch: x86_64
+      family: ubuntu
+      isoURL: https://releases.ubuntu.com/22.04.2/ubuntu-22.04.2-live-server-amd64.iso
+      protocol: http
+      boot_methods:
+        - EFI
+      efi_options:
+        - gui-install
+
+    # Ubuntu Server 22.04 - ARM64
+    - name: ubuntu2204serverarm64
+      displayName: Ubuntu 22.04 LTS Server
+      group: ubuntu22.04
+      efi_kernel: casper/vmlinuz
+      efi_initrd: casper/initrd
+      arch: aarch64
+      family: ubuntu
+      isoURL: https://cdimage.ubuntu.com/releases/22.04/release/ubuntu-22.04.2-live-server-arm64.iso
+      protocol: http
+      boot_methods:
+        - EFI
+      efi_options:
+        - gui-install
+
+    # Rocky 9.1 - x86_64
+    - name: rocky91x8664
+      displayName: Rocky Linux 9.1
+      group: rocky91
+      efi_kernel: vmlinuz
+      efi_initrd: initrd.img
+      arch: x86_64
+      family: rhel
+      isoURL: https://download.rockylinux.org/pub/rocky/9/isos/x86_64/Rocky-9.1-x86_64-dvd.iso
+      protocol: ftp
+      boot_methods:
+        - EFI
+      efi_options:
+        - gui-install
+        - text-install
+        - linux-rescue
+
+    # Rocky 9.1 - ARM64
+    - name: rocky91arm64
+      displayName: Rocky Linux 9.1
+      group: rocky91
+      efi_kernel: vmlinuz
+      efi_initrd: initrd.img
+      arch: aarch64
+      family: rhel
+      isoURL: https://download.rockylinux.org/pub/rocky/9/isos/aarch64/Rocky-9.1-aarch64-dvd.iso
+      protocol: http
+      boot_methods:
+        - EFI
+      efi_options:
+        - gui-install
+        - text-install
+        - linux-rescue
+
+    - name: rhel86x8664
+      displayName: Red Hat Enterprise Linux 8.6
+      group: rhel86
+      bios_kernel: images/pxeboot/vmlinuz
+      bios_initrd: images/pxeboot/initrd.img
+      efi_kernel: casper/linux
+      efi_initrd: casper/initrd.gz
+      arch: x86_64
+      family: rhel
+      # Either isoURL or isoSrcPath need to be provided
+      isoSrcPath: /mnt/nfs-isos/rhel8.6-x86_64.iso
+      protocol: ftp
+      boot_methods:
+        - BIOS
+        - EFI
+      efi_options:
+        - gui-install
+        - text-install
+        - linux-rescue
+
+    - name: rhel86arm64
+      displayName: Red Hat Enterprise Linux 8.6
+      group: rhel86
+      efi_kernel: casper/linux
+      efi_initrd: casper/initrd.gz
+      arch: aarch64
+      family: rhel
+      # Either isoURL or isoSrcPath need to be provided
+      isoSrcPath: /mnt/nfs-isos/rhel8.6-aarch64.iso
+      protocol: http
+      boot_methods:
+        - EFI
+      efi_options:
+        - gui-install
+        - text-install
+        - linux-rescue
+
+    - name: rhel87x8664
+      displayName: Red Hat Enterprise Linux 8.7
+      group: rhel87
+      bios_kernel: images/pxeboot/vmlinuz
+      bios_initrd: images/pxeboot/initrd.img
+      arch: x86_64
+      family: rhel
+      # Either isoURL or isoSrcPath need to be provided
+      isoSrcPath: /mnt/nfs-isos/rhel8.7-x86_64.iso
+      protocol: http
+      boot_methods:
+        - BIOS
+        - EFI
+      efi_options:
+        - gui-install
+        - text-install
+        - linux-rescue
+
+    - name: rhel91x8664
+      displayName: Red Hat Enterprise Linux 9.1
+      group: rhel91
+      kernel: images/pxeboot/vmlinuz
+      initrd: images/pxeboot/initrd.img
+      arch: x86_64
+      efi_loader_seed: true
+      efi_loader_path: EFI/BOOT/ # trailing slash is important!
+      family: rhel
+      # Either isoURL or isoSrcPath need to be provided
+      isoSrcPath: /mnt/nfs-isos/rhel9.1-x86_64.iso
+      protocol: http
+      boot_methods:
+        - EFI
+      efi_options:
+        - gui-install
+        - text-install
+        - linux-rescue
+
+    - name: rhel91arm64
+      displayName: Red Hat Enterprise Linux 9.1
+      group: rhel91
+      efi_kernel: images/pxeboot/vmlinuz
+      efi_initrd: images/pxeboot/initrd.img
+      arch: aarch64
+      efi_loader_seed: true
+      efi_loader_path: EFI/BOOT/ # trailing slash is important!
+      family: rhel
+      # Either isoURL or isoSrcPath need to be provided
+      isoSrcPath: /mnt/nfs-isos/rhel9.1-aarch64.iso
+      protocol: http
+      boot_methods:
+        - EFI
+      efi_options:
+        - gui-install
+        - text-install
+        - linux-rescue
+
+    ## No need to change the following variables
+    # Don't change the paths unless you know what you're doing, or wnat to make a bunch of copies everywhere around the file system
+    global_base_path: /var/ftp/pub
+    httpd_document_root: "{{ global_base_path }}"
+    nfs_export_path: "{{ global_base_path }}"
+    tftp_server_sub_path: pxe/tftpboot
+    install_iso_mount_sub_path: pxe/install
+    install_iso_mount_base_path: "{{ global_base_path }}/{{ install_iso_mount_sub_path }}"
+    tftp_server_base_path: "{{ global_base_path }}/{{ tftp_server_sub_path }}"
+
+    ## DHCPD Options
+    default_lease_time: 3600
+    max_lease_time: 7200
+
+    general_base_packages:
+      - wget
+      - nano
+      - curl
+      - openssl
+      - firewalld
+      - bash-completion
+      - git
+      - cockpit
+      - gzip
+      - unzip
+      - nmap
+      - syslinux
+
+    efi_detected: false
+    efi_x86_64_detected: false
+    efi_aarch64_detected: false
+    efi_x86_64_seeder_detected: false
+    efi_aarch64_seeder_detected: false
+    efi_x86_64_seeder_name: ''
+    efi_aarch64_seeder_name: ''
+
+
+  tasks:
+  - name: Install Packages
+    ansible.builtin.include_tasks:
+      file: tasks/install-packages.yml
+      apply:
+        tags:
+          - install-packages
+    tags:
+      - install-packages
+
+  - name: General Prework
+    ansible.builtin.include_tasks:
+      file: tasks/general-prework.yml
+      apply:
+        tags:
+          - general-prework
+    tags:
+      - general-prework
+
+  - name: Configure FTP
+    when: enable_ftp
+    ansible.builtin.include_tasks:
+      file: tasks/setup-vsftpd.yml
+      apply: 
+        tags:
+          - setup-vsftpd
+    tags:
+      - setup-vsftpd
+
+  - name: Configure TFTP
+    when: enable_tftp
+    ansible.builtin.include_tasks:
+      file: tasks/setup-tftpd.yml
+      apply:
+        tags:
+          - setup-tftpd
+    tags:
+      - setup-tftpd
+
+  - name: Configure HTTP
+    when: enable_http
+    ansible.builtin.include_tasks:
+      file: tasks/setup-httpd.yml
+      apply:
+        tags:
+          - setup-httpd
+    tags:
+      - setup-httpd
+
+  - name: Configure NFS
+    when: enable_nfs
+    ansible.builtin.include_tasks:
+      file: tasks/setup-nfs-server.yml
+      apply:
+        tags:
+          - setup-nfs-server
+    tags:
+      - setup-nfs-server
+
+  - name: Configure DHCP
+    when: enable_dhcpd
+    ansible.builtin.include_tasks:
+      file: tasks/setup-dhcpd.yml
+      apply:
+        tags:
+          - setup-dhcpd
+    tags:
+      - setup-dhcpd
+
+  - name: Base System Operations
+    block:
+
+      - name: Create global paths
+        ansible.builtin.file:
+          path: "{{ path_item }}"
+          state: directory
+          owner: nobody
+          group: nobody
+          mode: 0755
+        loop:
+          - "{{ global_base_path }}" # /var/ftp/pub
+          - "{{ install_iso_mount_base_path }}" # /var/ftp/pub/pxe/install, where all the ISOs and their mounts go
+          - "{{ install_iso_mount_base_path }}/aarch64" # /var/ftp/pub/pxe/install/aarch64
+          - "{{ install_iso_mount_base_path }}/x86_64" # /var/ftp/pub/pxe/install/x86_64
+          - "{{ tftp_server_base_path }}" # /var/ftp/pub/pxe/tftpboot
+          - "{{ tftp_server_base_path }}/EFI" # /var/ftp/pub/pxe/tftpboot/EFI
+          - "{{ tftp_server_base_path }}/EFI/x86_64" # /var/ftp/pub/pxe/tftpboot/EFI/x86_64, dir where the default grub.cfg menu file is located
+          - "{{ tftp_server_base_path }}/EFI/aarch64" # /var/ftp/pub/pxe/tftpboot/EFI/aarch64, dir where the default grub.cfg menu file is located
+          - "{{ tftp_server_base_path }}/BIOS" # /var/ftp/pub/pxe/tftpboot/BIOS
+          - "{{ tftp_server_base_path }}/BIOS/x86_64" # /var/ftp/pub/pxe/tftpboot/BIOS/x86_64
+          - "{{ tftp_server_base_path }}/BIOS/x86_64/pxelinux.cfg" # /var/ftp/pub/pxe/tftpboot/BIOS/x86_64/pxelinux.cfg, dir where the default menu file is located
+        loop_control:
+          loop_var: path_item
+
+      - name: Copy the Syslinux files for BIOS booting on X86_64
+        ansible.builtin.copy:
+          src: /usr/share/syslinux/
+          dest: "{{ tftp_server_base_path }}/BIOS/x86_64/"
+          owner: nobody
+          group: nobody
+          mode: 0755
+          remote_src: true
+          directory_mode: true
+
+      - name: Setup EFI Boot File Seeding
+        block:
+          - name: Check for seeders, set facts
+            ansible.builtin.include_tasks:
+              file: tasks/efi-boot-seeding.yml
+              apply:
+                tags:
+                  - efi-boot-seeding
+            loop: "{{ distros }}"
+            loop_control:
+              loop_var: distro_item
+            tags:
+              - efi-boot-seeding
+
+          - name: Failure State - EFI X86_64 Detected, without seeder
+            when: efi_x86_64_detected == true and efi_x86_64_seeder_detected == false
+            ansible.builtin.fail:
+              msg: "EFI boot method detected for x86_64, but no seeder was detected.  Please set the 'efi_loader_seed' variable to 'true' for the distro you wish to seed as the primary bootloader seed."
+
+          - name: Failure State - EFI AARCH64 Detected, without seeder
+            when: efi_aarch64_detected == true and efi_aarch64_seeder_detected == false
+            ansible.builtin.fail:
+              msg: "EFI boot method detected for aarch64, but no seeder was detected.  Please set the 'efi_loader_seed' variable to 'true' for the distro you wish to seed as the primary bootloader seed."
+
+
+          - name: Seed the X86_64 Bootloader files
+            when: efi_x86_64_seeder_name is defined and efi_x86_64_seeder_name != "" and efi_x86_64_seeder_name == distro_item.name and distro_item.arch == "x86_64"
+            ansible.builtin.copy:
+              src: "{{ efi_x86_64_seeder_path }}/{{ distro_item.efi_loader_path | default('EFI/BOOT/') }}"
+              dest: "{{ tftp_server_base_path }}/EFI/x86_64/"
+              owner: nobody
+              group: nobody
+              mode: 0755
+              remote_src: true
+              directory_mode: true
+            loop: "{{ distros }}"
+            loop_control:
+              loop_var: distro_item
+
+          - name: Seed the AARCH64 Bootloader files
+            when: efi_aarch64_seeder_name is defined and efi_aarch64_seeder_name != "" and efi_aarch64_seeder_name == distro_item.name and distro_item.arch == "aarch64"
+            ansible.builtin.copy:
+              src: "{{ efi_aarch64_seeder_path }}/{{ distro_item.efi_loader_path | default('EFI/BOOT/') }}"
+              dest: "{{ tftp_server_base_path }}/EFI/aarch64/"
+              owner: nobody
+              group: nobody
+              mode: 0755
+              remote_src: true
+              directory_mode: true
+            loop: "{{ distros }}"
+            loop_control:
+              loop_var: distro_item
+
+      - name: Template PXE/GRUB Menus
+        block:
+          - name: Template the BIOS Boot Menu for X86_64
+            template:
+              src: templates/menu-x86_64-bios.j2
+              dest: "{{ tftp_server_base_path }}/BIOS/x86_64/pxelinux.cfg/default"
+              owner: nobody
+              group: nobody
+              mode: 0755
+
+          - name: Template the EFI Boot Menu for X86_64
+            template:
+              src: templates/menu-x86_64-efi.j2
+              dest: "{{ tftp_server_base_path }}/EFI/x86_64/grub.cfg"
+              owner: nobody
+              group: nobody
+              mode: 0755
+
+  - name: Per Distro Operations
+    block:
+
+      - name: Create distro paths
+        ansible.builtin.include_tasks:
+          file: tasks/create-distro-paths.yml
+          apply:
+            tags:
+              - create-distro-paths
+        loop: "{{ distros }}"
+        loop_control:
+          loop_var: distro_item
+        tags:
+          - create-distro-paths
+
+      - name: Copy/Download ISOs
+        ansible.builtin.include_tasks:
+          file: tasks/download-isos.yml
+          apply:
+            tags:
+              - download-isos
+        loop: "{{ distros }}"
+        loop_control:
+          loop_var: distro_item
+        tags:
+          - download-isos
+
+      - name: Setup ISO Mounts
+        ansible.builtin.include_tasks:
+          file: tasks/mount-isos.yml
+          apply:
+            tags:
+              - mount-isos
+        loop: "{{ distros }}"
+        loop_control:
+          loop_var: distro_item
+        tags:
+          - mount-isos
+
+      - name: Copy needed files from ISOs
+        ansible.builtin.include_tasks:
+          file: tasks/copy-iso-files.yml
+          apply:
+            tags:
+              - copy-iso-files
+        loop: "{{ distros }}"
+        loop_control:
+          loop_var: distro_item
+        tags:
+          - copy-iso-files
