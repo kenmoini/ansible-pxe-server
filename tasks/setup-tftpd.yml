@@ -1,4 +1,12 @@
 ---
+- name: Ensure the TFTP Service Override path exists
+  ansible.builtin.file:
+    path: /etc/systemd/system/tftp.service.d
+    state: directory
+    mode: 0755
+    owner: root
+    group: root
+
 - name: Template the TFTP Service Override Config File
   ansible.builtin.template:
     src: tftp.service.d-override.conf.j2
