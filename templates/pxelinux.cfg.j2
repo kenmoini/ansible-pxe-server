@@ -6,6 +6,8 @@ PROMPT 0
 
 menu include pxelinux.cfg/pxe-menu-defaults.cfg
 
+NOESCAPE 1
+
 label boottarget
   menu label {{ distro.displayName }} - {{ distro.protocol | upper }}
   kernel {{ distro.group }}/{{ distro.name }}/{{ distro.bios_kernel | basename }}
