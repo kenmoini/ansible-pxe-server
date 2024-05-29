@@ -1,0 +1,36 @@
+TIMEOUT 100
+TOTALTIMEOUT 1000
+ONTIMEOUT boottarget
+default vesamenu.c32
+PROMPT 0
+
+menu include pxelinux.cfg/pxe-menu-defaults.cfg
+
+label boottarget
+  menu label {{ distro.displayName }} - {{ distro.protocol | upper }}
+  kernel {{ distro.group }}/{{ distro.name }}/{{ distro.bios_kernel | basename }}
+  initrd {{ distro.group }}/{{ distro.name }}/{{ distro.bios_initrd | basename }}
+{% if distro_family == "rhel" %}
+  append inst.stage2={{ distro.protocol | lower }}://{{ pxe_server_ip }}/{{ 'pub/' if (distro.protocol|lower) == "ftp" }}{{ install_iso_mount_sub_path }}/{{ distro.arch }}/{{ distro.group }}/ext/{{ isoFileName | replace('.iso','') }} inst.repo={{ distro.protocol | lower }}://{{ pxe_server_ip }}/{{ 'pub/' if (distro.protocol|lower) == "ftp" }}{{ install_iso_mount_sub_path }}/{{ distro.arch }}/{{ distro.group }}/ext/{{ isoFileName | replace('.iso','') }} quiet
+{% elif distro_family == "ubuntu" %}
+  append root=/dev/ram0 ramdisk_size=1500000 ip=dhcp url={{ distro.protocol | lower }}://{{ pxe_server_ip }}/{{ 'pub/' if (distro.protocol|lower) == "ftp" }}{{ install_iso_mount_sub_path }}/{{ distro.arch }}/{{ distro.group }}/iso/{{ isoFileName }}
+{% endif %}
+
+menu separator # insert an empty line
+
+# utilities submenu
+menu begin ^Troubleshooting
+  menu title Troubleshooting
+
+label local
+  menu label Boot from ^local drive
+  localboot 0
+
+menu separator # insert an empty line
+menu separator # insert an empty line
+
+label returntomain
+  menu label Return to ^main menu
+  menu exit
+
+menu end

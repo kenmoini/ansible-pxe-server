@@ -1,0 +1,28 @@
+- name: Configure a Boot Image For a Specific MAC Address
+  hosts: all
+  become: true
+
+  vars:
+    path_prefix: /var/ftp/pub/pxe/tftpboot
+    boot_mode: BIOS
+    architecture: x86_64
+    mac_prefix: "01"
+    pxe_menu_title: "PER MAC AUTO BOOT"
+    distro_family: "rhel"
+
+  tasks:
+    - name: Template the shared menu defaults
+      ansible.builtin.template:
+        src: templates/pxelinux-menu-defaults.cfg.j2
+        dest: "{{ path_prefix }}/{{ boot_mode }}/{{ architecture }}/pxelinux.cfg/pxe-menu-defaults.cfg"
+        mode: 0644
+        owner: nobody
+        group: nobody
+
+    - name: Template the pxelinux config for the MAC address
+      ansible.builtin.template:
+        src: templates/pxelinux.cfg.j2
+        dest: "{{ path_prefix }}/{{ boot_mode }}/{{ architecture }}/pxelinux.cfg/{{ mac_prefix }}-{{ mac_address | regex_replace('[:]', '-') }}"
+        mode: 0644
+        owner: nobody
+        group: nobody
