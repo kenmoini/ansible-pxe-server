@@ -23,6 +23,7 @@
     loop_var: fw_items
 
 - name: Enable the needed SELinux Boolean(s)
+  when: ansible_selinux is defined and ansible_selinux != False and ansible_selinux.status == 'enabled'
   ansible.posix.seboolean:
     name: "{{ seb_item }}"
     state: yes
