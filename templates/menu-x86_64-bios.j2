@@ -66,9 +66,9 @@ label {{ distro.name }}
   kernel {{ distro.group }}/{{ distro.name }}/{{ distro.bios_kernel | basename }}
   initrd {{ distro.group }}/{{ distro.name }}/{{ distro.bios_initrd | basename }}
 {% if distro.family == "rhel" %}
-  append inst.stage2={{ distro.protocol | lower }}://{{ pxe_server_ip }}/{{ 'pub/' if (distro.protocol|lower) == "ftp" }}{{ install_iso_mount_sub_path }}/{{ distro.arch }}/{{ distro.group }}/ext/{{ isoFileName | replace('.iso','') }} inst.repo={{ distro.protocol | lower }}://{{ pxe_server_ip }}/{{ 'pub/' if (distro.protocol|lower) == "ftp" }}{{ install_iso_mount_sub_path }}/{{ distro.arch }}/{{ distro.group }}/ext/{{ isoFileName | replace('.iso','') }} quiet
+  append inst.stage2={{ distro.protocol | lower }}://{{ httpd_server_ip if (distro.protocol|lower) == "http" | default(pxe_server_ip) }}/{{ 'pub/' if (distro.protocol|lower) == "ftp" }}{{ install_iso_mount_sub_path }}/{{ distro.arch }}/{{ distro.group }}/ext/{{ isoFileName | replace('.iso','') }} inst.repo={{ distro.protocol | lower }}://{{ httpd_server_ip if (distro.protocol|lower) == "http" | default(pxe_server_ip) }}/{{ 'pub/' if (distro.protocol|lower) == "ftp" }}{{ install_iso_mount_sub_path }}/{{ distro.arch }}/{{ distro.group }}/ext/{{ isoFileName | replace('.iso','') }} quiet
 {% elif distro.family == "ubuntu" %}
-  append root=/dev/ram0 ramdisk_size=1500000 ip=dhcp url={{ distro.protocol | lower }}://{{ pxe_server_ip }}/{{ 'pub/' if (distro.protocol|lower) == "ftp" }}{{ install_iso_mount_sub_path }}/{{ distro.arch }}/{{ distro.group }}/iso/{{ isoFileName }}
+  append root=/dev/ram0 ramdisk_size=1500000 ip=dhcp url={{ distro.protocol | lower }}://{{ httpd_server_ip if (distro.protocol|lower) == "http" | default(pxe_server_ip) }}/{{ 'pub/' if (distro.protocol|lower) == "ftp" }}{{ install_iso_mount_sub_path }}/{{ distro.arch }}/{{ distro.group }}/iso/{{ isoFileName }}
 {% endif %}
 {% endif %}
 {% endfor %}
