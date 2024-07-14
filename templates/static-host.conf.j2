@@ -1,0 +1,5 @@
+host {{ hostname }} {
+  hardware ethernet {{ mac_address }};
+  fixed-address {{ ip_address }};
+  option host-name "{{ hostname }}";
+}
