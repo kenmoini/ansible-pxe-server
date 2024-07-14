@@ -40,3 +40,6 @@ subnet {{ dhcp_subnet }} netmask {{ dhcp_netmask }} {
   }
   
 }
+
+# Optional configuration files that can be loaded for static host IP reservations
+# include "/etc/dhcp/static-hosts/52-54-00-a3-12-1b.conf";
