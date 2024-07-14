@@ -9,6 +9,14 @@
     backup: true
   register: dhcpd_conf_templating
 
+- name: Create atomic static host configuration directory
+  ansible.builtin.files:
+    path: /etc/dhcp/static-hosts
+    state: directory
+    owner: root
+    group: root
+    mode: 0755    
+
 - name: Allow DHCP through the firewall
   ansible.posix.firewalld:
     service: "{{ fw_items }}"
