@@ -356,57 +356,9 @@
           remote_src: true
           directory_mode: true
 
-      - name: Setup EFI Boot File Seeding
-        block:
-          - name: Check for seeders, set facts
-            ansible.builtin.include_tasks:
-              file: tasks/efi-boot-seeding.yml
-              apply:
-                tags:
-                  - efi-boot-seeding
-            loop: "{{ distros }}"
-            loop_control:
-              loop_var: distro_item
-            tags:
-              - efi-boot-seeding
-
-          - name: Failure State - EFI X86_64 Detected, without seeder
-            when: efi_x86_64_detected == true and efi_x86_64_seeder_detected == false
-            ansible.builtin.fail:
-              msg: "EFI boot method detected for x86_64, but no seeder was detected.  Please set the 'efi_loader_seed' variable to 'true' for the distro you wish to seed as the primary bootloader seed."
-
-          - name: Failure State - EFI AARCH64 Detected, without seeder
-            when: efi_aarch64_detected == true and efi_aarch64_seeder_detected == false
-            ansible.builtin.fail:
-              msg: "EFI boot method detected for aarch64, but no seeder was detected.  Please set the 'efi_loader_seed' variable to 'true' for the distro you wish to seed as the primary bootloader seed."
-
-          - name: Seed the X86_64 Bootloader files
-            when: efi_x86_64_seeder_name is defined and efi_x86_64_seeder_name != "" and efi_x86_64_seeder_name == distro_item.name and distro_item.arch == "x86_64"
-            ansible.builtin.copy:
-              src: "{{ efi_x86_64_seeder_path }}/{{ distro_item.efi_loader_path | default('EFI/BOOT/') }}"
-              dest: "{{ tftp_server_base_path }}/EFI/x86_64/"
-              owner: nobody
-              group: nobody
-              mode: 0755
-              remote_src: true
-              directory_mode: true
-            loop: "{{ distros }}"
-            loop_control:
-              loop_var: distro_item
-
-          - name: Seed the AARCH64 Bootloader files
-            when: efi_aarch64_seeder_name is defined and efi_aarch64_seeder_name != "" and efi_aarch64_seeder_name == distro_item.name and distro_item.arch == "aarch64"
-            ansible.builtin.copy:
-              src: "{{ efi_aarch64_seeder_path }}/{{ distro_item.efi_loader_path | default('EFI/BOOT/') }}"
-              dest: "{{ tftp_server_base_path }}/EFI/aarch64/"
-              owner: nobody
-              group: nobody
-              mode: 0755
-              remote_src: true
-              directory_mode: true
-            loop: "{{ distros }}"
-            loop_control:
-              loop_var: distro_item
+  # NOTE: The 'Setup EFI Boot File Seeding' block was previously here, but this caused errors if the distro directories were not yet created or ISOs not yet mounted.
+  # Moved after 'Per Distro Operations' per user report and error: running EFI seeding before mounting distros causes failures.
+  # See https://github.com/kenmoini/ansible-pxe-server/issues/2 and user report for details.
 
       - name: Template PXE/GRUB Menus
         block:
@@ -484,3 +436,59 @@
           loop_var: distro_item
         tags:
           - copy-iso-files
+
+  # --- PATCH: Moved 'Setup EFI Boot File Seeding' block here ---
+  # This block was previously in 'Base System Operations', but running it before the distro directories are created and ISOs are mounted causes errors.
+  # It must run after 'Per Distro Operations' so all required paths and mounts exist.
+  # See https://github.com/kenmoini/ansible-pxe-server/issues/2 and user report for details.
+  - name: Setup EFI Boot File Seeding
+    block:
+      - name: Check for seeders, set facts
+        ansible.builtin.include_tasks:
+          file: tasks/efi-boot-seeding.yml
+          apply:
+            tags:
+              - efi-boot-seeding
+        loop: "{{ distros }}"
+        loop_control:
+          loop_var: distro_item
+        tags:
+          - efi-boot-seeding
+
+      - name: Failure State - EFI X86_64 Detected, without seeder
+        when: efi_x86_64_detected == true and efi_x86_64_seeder_detected == false
+        ansible.builtin.fail:
+          msg: "EFI boot method detected for x86_64, but no seeder was detected.  Please set the 'efi_loader_seed' variable to 'true' for the distro you wish to seed as the primary bootloader seed."
+
+      - name: Failure State - EFI AARCH64 Detected, without seeder
+        when: efi_aarch64_detected == true and efi_aarch64_seeder_detected == false
+        ansible.builtin.fail:
+          msg: "EFI boot method detected for aarch64, but no seeder was detected.  Please set the 'efi_loader_seed' variable to 'true' for the distro you wish to seed as the primary bootloader seed."
+
+      - name: Seed the X86_64 Bootloader files
+        when: efi_x86_64_seeder_name is defined and efi_x86_64_seeder_name != "" and efi_x86_64_seeder_name == distro_item.name and distro_item.arch == "x86_64"
+        ansible.builtin.copy:
+          src: "{{ efi_x86_64_seeder_path }}/{{ distro_item.efi_loader_path | default('EFI/BOOT/') }}"
+          dest: "{{ tftp_server_base_path }}/EFI/x86_64/"
+          owner: nobody
+          group: nobody
+          mode: 0755
+          remote_src: true
+          directory_mode: true
+        loop: "{{ distros }}"
+        loop_control:
+          loop_var: distro_item
+
+      - name: Seed the AARCH64 Bootloader files
+        when: efi_aarch64_seeder_name is defined and efi_aarch64_seeder_name != "" and efi_aarch64_seeder_name == distro_item.name and distro_item.arch == "aarch64"
+        ansible.builtin.copy:
+          src: "{{ efi_aarch64_seeder_path }}/{{ distro_item.efi_loader_path | default('EFI/BOOT/') }}"
+          dest: "{{ tftp_server_base_path }}/EFI/aarch64/"
+          owner: nobody
+          group: nobody
+          mode: 0755
+          remote_src: true
+          directory_mode: true
+        loop: "{{ distros }}"
+        loop_control:
+          loop_var: distro_item
